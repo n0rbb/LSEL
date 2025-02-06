@@ -1,1 +1,3 @@
-"# LSEL \n Repositorio para los proyectos de LSEL, grupo LSEL-11." 
+# LSEL 
+Repositorio para los proyectos de LSEL 
+Grupo LSEL - 11 
