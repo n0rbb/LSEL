@@ -8,6 +8,15 @@ Entering any line of input at the terminal will exit the server.
 import select
 import socket
 import sys
+import datetime
+
+def get_date():
+    now = datetime.now()
+    return f"It’s {now.strftime('%A')}, the {now.day}th of {now.strftime('%B')} of {now.year}"
+
+def get_time():
+    now = datetime.now()
+    return f"It’s {now.strftime('%H:%M %p')}"
 
 host = ''
 port = 50000
