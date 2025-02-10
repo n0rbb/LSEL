@@ -49,7 +49,14 @@ while running:
             # Handle all other sockets
             data = s.recv(size)
             if data:
-                s.sendall(data)  # sendall() ensures all data is sent
+                command = data.decode().strip().lower()
+                if command == "date":
+                    response = get_date()
+                elif command == "time":
+                    response = get_time()
+                else:
+                    response = "Unknown command. Please use 'date' or 'time'.\n"
+                s.sendall(response.encode())  # sendall() ensures all data is sent
             else:
                 s.close()
                 inputs.remove(s)
