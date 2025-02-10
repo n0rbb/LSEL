@@ -12,7 +12,15 @@ from datetime import datetime
 
 def get_date():
     now = datetime.now()
-    return f"It’s {now.strftime('%A')}, the {now.day}th of {now.strftime('%B')} of {now.year}\n"
+    if now.day == 1:
+        suffix = "st"
+    elif now.day == 2:
+        suffix = "nd"
+    elif now.day == 3:
+        suffix = "rd"
+    else:
+        suffix = "th"
+    return f"It’s {now.strftime('%A')}, the {now.day}{suffix} of {now.strftime('%B')} of {now.year}\n"
 
 def get_time():
     now = datetime.now()
