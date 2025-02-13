@@ -8,6 +8,23 @@ Entering any line of input at the terminal will exit the server.
 import select
 import socket
 import sys
+from datetime import datetime
+
+def get_date():
+    now = datetime.now()
+    if now.day == 1:
+        suffix = "st"
+    elif now.day == 2:
+        suffix = "nd"
+    elif now.day == 3:
+        suffix = "rd"
+    else:
+        suffix = "th"
+    return f"It’s {now.strftime('%A')}, the {now.day}{suffix} of {now.strftime('%B')} of {now.year}\n"
+
+def get_time():
+    now = datetime.now()
+    return f"It’s {now.strftime('%H:%M %p')}\n"
 
 host = ''
 port = 50000
@@ -40,7 +57,14 @@ while running:
             # Handle all other sockets
             data = s.recv(size)
             if data:
-                s.sendall(data)  # sendall() ensures all data is sent
+                command = data.decode().strip().lower()
+                if command == "date":
+                    response = get_date()
+                elif command == "time":
+                    response = get_time()
+                else:
+                    response = "Unknown command. Please use 'date' or 'time'.\n"
+                s.sendall(response.encode())  # sendall() ensures all data is sent
             else:
                 s.close()
                 inputs.remove(s)
