@@ -4,7 +4,16 @@ from itertools import cycle
 from datetime import datetime
 import sys
 
-mode=sys.argv[2]
+#PARA QUE ESTO FUNCIONE INCLUSO CUANDO NO SE METEN TODOS LOS ARGUMENTOS
+if len(sys.argv) < 3:
+	mode = "b" #No mode entered by user
+else:
+	mode = str(sys.argv[2])
+	
+if len(sys.argv) < 2:
+	client_id = "DEFAULT" #no client id entered by user
+else:
+	client_id = str(sys.argv[1])
 
 def get_date():
     now = datetime.now()
@@ -24,7 +33,7 @@ def messageFunction (client, userdata, message):
 	message = str(message.payload.decode("utf-8"))
 	print(message)
  
-ourClient = mqtt.Client(str(sys.argv[1])) # Create a MQTT client object
+ourClient = mqtt.Client(clid) # Create a MQTT client object
 ourClient.connect("10.8.42.100", 1885) # Connect to the test MQTT broker
 ourClient.loop_start() # Start the MQTT client
 
