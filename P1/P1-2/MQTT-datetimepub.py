@@ -4,17 +4,7 @@ from itertools import cycle
 from datetime import datetime
 import sys
 
-#PARA QUE ESTO FUNCIONE INCLUSO CUANDO NO SE METEN TODOS LOS ARGUMENTOS
-if len(sys.argv) < 3:
-	mode = "b" #No mode entered by user
-else:
-	mode = str(sys.argv[2])
-	
-if len(sys.argv) < 2:
-	client_id = f"DEFAULT{mode}" #no client id entered by user
-else:
-	client_id = str(sys.argv[1])
-
+#Functions
 def get_date():
     now = datetime.now()
     if now.day == 1:
@@ -33,9 +23,7 @@ def messageFunction (client, userdata, message):
 	message = str(message.payload.decode("utf-8"))
 	print(message)
  
-ourClient = mqtt.Client(clid) # Create a MQTT client object
-ourClient.connect("10.8.42.100", 1885) # Connect to the test MQTT broker
-ourClient.loop_start() # Start the MQTT client
+
 
 def publish_msg(ourClient, mode):
 	topics = ['MQTT_NETWORK/DMZ/TIME', 'MQTT_NETWORK/DMZ/DATE']
@@ -50,7 +38,26 @@ def publish_msg(ourClient, mode):
 	elif mode == "b": #Case to publish both	
 		ourClient.publish(topics[0], tim)
 		ourClient.publish(topics[1], day)
+
+##Main program setup
+#Compruebo los argumentos pasados
+if len(sys.argv) < 3:
+	mode = "b" #No mode entered by user
+else:
+	mode = str(sys.argv[2])
 	
+if len(sys.argv) < 2:
+	client_id = "DEFAULT" #no client id entered by user
+else:
+	client_id = str(sys.argv[1])
+
+
+client_id = client_id + mode
+
+ourClient = mqtt.Client(client_id) # Create a MQTT client object
+ourClient.connect("10.8.42.100", 1885) # Connect to the test MQTT broker
+ourClient.loop_start() # Start the MQTT client
+
 # Main program loop
 while(1):
     now = datetime.now()
