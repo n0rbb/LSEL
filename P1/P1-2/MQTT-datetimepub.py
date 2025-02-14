@@ -50,7 +50,8 @@ if len(sys.argv) < 2:
 else:
 	mode = str(sys.argv[1])
 
-
+#Append mode to ID name to avoid a conflict where the broker would skip messages
+#if two versions of this script were running at the same time with the same ID
 client_id = f"{client_id} > {mode}"
 
 ourClient = mqtt.Client(client_id) # Create a MQTT client object
