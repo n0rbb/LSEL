@@ -4,7 +4,7 @@ from itertools import cycle
 from datetime import datetime
 import sys
 
-mode=sys.argv[1]
+mode=sys.argv[2]
 
 def get_date():
     now = datetime.now()
@@ -24,8 +24,8 @@ def messageFunction (client, userdata, message):
 	message = str(message.payload.decode("utf-8"))
 	print(message)
  
-ourClient = mqtt.Client(f"ZMD{mode}") # Create a MQTT client object
-ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker
+ourClient = mqtt.Client(str(sys.argv[1])) # Create a MQTT client object
+ourClient.connect("10.8.42.100", 1885) # Connect to the test MQTT broker
 ourClient.loop_start() # Start the MQTT client
 
 def publish_msg(ourClient, mode):
