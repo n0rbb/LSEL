@@ -11,7 +11,7 @@ else:
 	mode = str(sys.argv[2])
 	
 if len(sys.argv) < 2:
-	client_id = "DEFAULT" #no client id entered by user
+	client_id = f"DEFAULT{mode}" #no client id entered by user
 else:
 	client_id = str(sys.argv[1])
 
