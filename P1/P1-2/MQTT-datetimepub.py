@@ -42,17 +42,17 @@ def publish_msg(ourClient, mode):
 ##Main program setup
 #Compruebo los argumentos pasados
 if len(sys.argv) < 3:
-	mode = "b" #No mode entered by user
+	client_id = "DEFAULT" #No mode entered by user
 else:
-	mode = str(sys.argv[2])
+	client_id = str(sys.argv[2])
 	
 if len(sys.argv) < 2:
-	client_id = "DEFAULT" #no client id entered by user
+	mode = "b" #no client id entered by user
 else:
-	client_id = str(sys.argv[1])
+	mode = str(sys.argv[1])
 
 
-client_id = client_id + mode
+client_id = f"{client_id} > {mode}"
 
 ourClient = mqtt.Client(client_id) # Create a MQTT client object
 ourClient.connect("10.8.42.100", 1885) # Connect to the test MQTT broker
