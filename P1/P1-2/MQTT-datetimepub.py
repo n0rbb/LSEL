@@ -16,7 +16,7 @@ def get_date():
         suffix = "rd"
     else:
         suffix = "th"
-    return f"It’s {now.strftime('%A')}, the {now.day}{suffix} of {now.strftime('%B')} of {now.year}\n"
+    return f"It’s {now.strftime('%A')}, the {now.day}{suffix} of {now.strftime('%B')} of {now.year}"
 
 # Our "on message" event
 def messageFunction (client, userdata, message):
@@ -24,8 +24,8 @@ def messageFunction (client, userdata, message):
 	message = str(message.payload.decode("utf-8"))
 	print(message)
  
-ourClient = mqtt.Client("ZMD") # Create a MQTT client object
-ourClient.connect("10.8.42.100", 1885) # Connect to the test MQTT broker
+ourClient = mqtt.Client(f"ZMD{mode}") # Create a MQTT client object
+ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker
 ourClient.loop_start() # Start the MQTT client
 
 def publish_msg(ourClient, mode):
@@ -33,19 +33,18 @@ def publish_msg(ourClient, mode):
 	tim = f"It’s {datetime.now().strftime('%H:%M:%S %p')}"
 	day = get_date()
 	if mode == "t" or mode == "h":
-		
-		ourClient.publish(time_topic, tim)
+		ourClient.publish(topics[0], tim)
 		
 	elif mode == "d":
-		ourClient.publish(day_topic, day)
+		ourClient.publish(topics[1], day)
 	
 	elif mode == "b": #Case to publish both	
 		ourClient.publish(topics[0], tim)
 		ourClient.publish(topics[1], day)
 	
-		
 # Main program loop
 while(1):
-	if now.second % 10 == 0:
-		publish_msg(ourClient, mode) # Publish message to MQTT broker
-	time.sleep(1) # Sleep for 10 seconds
+    now = datetime.now()
+    if now.second % 10 == 0:
+        publish_msg(ourClient, mode) # Publish message to MQTT broker
+    time.sleep(1) # Sleep for 10 seconds
