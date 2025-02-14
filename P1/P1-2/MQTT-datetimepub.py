@@ -30,10 +30,10 @@ ourClient.loop_start() # Start the MQTT client
 
 def publish_msg(ourClient, mode):
 	topics = ['MQTT_NETWORK/DMZ/TIME', 'MQTT_NETWORK/DMZ/DATE']
-	now = datetime.now()
+	tim = f"It’s {datetime.now().strftime('%H:%M:%S %p')}"
 	day = get_date()
 	if mode == "t" or mode == "h":
-		tim = f"It’s {now.strftime('%H:%M:%S %p')}"
+		
 		ourClient.publish(time_topic, tim)
 		
 	elif mode == "d":
