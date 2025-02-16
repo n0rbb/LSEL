@@ -20,7 +20,8 @@ print('%', end='', flush=True)  # Equivalent to sys.stdout.write('%')
 
 while True:
     # Read from keyboard
-    line = sys.stdin.readline()
+    line = sys.stdin.readline() # We don't use input() since we don't want any prompts here, 
+    #deeming stdin a faster option that minimises overhead without losing functionality in this case
     if line == '\n':  # If Enter is pressed without input, exit
         break
     s.sendall(line.encode('utf-8'))  # Encode string to bytes before sending
