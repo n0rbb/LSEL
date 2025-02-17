@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 """
-An echo server that uses select to handle multiple clients at a time.
-Entering any line of input at the terminal will exit the server.
+A server that receives date and time as commands and acts accordingly
 """
 
 import select
@@ -10,6 +9,7 @@ import socket
 import sys
 from datetime import datetime
 
+# Functions
 def get_date():
     now = datetime.now()
     if now.day == 1:
@@ -26,6 +26,7 @@ def get_time():
     now = datetime.now()
     return f"It’s {now.strftime('%H:%M %p')}\n"
 
+# Loop setup
 host = ''
 port = 50000
 backlog = 5
@@ -38,6 +39,7 @@ server.listen(backlog)
 inputs = [server, sys.stdin]
 running = True
 
+# Main loop
 while running:
     input_ready, _, _ = select.select(inputs, [], [])
 
