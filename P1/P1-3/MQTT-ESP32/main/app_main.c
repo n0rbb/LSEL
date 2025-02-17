@@ -30,8 +30,30 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-static const char *TAG = "mqtt_example";
+#define PUBLISH_PERIOD 2000
+#define MAX_N_CHARS 500
+//#define CORREO "d.muniz@alumnos.upm.es"
+#define CORREO "mario.demiguel@alumnos.upm.es"
 
+static const char *TAG = "mqtt_LSEL11";
+uint32_t MQTT_CONNECTED = 0;
+esp_mqtt_client_handle_t mqtt_client = NULL;
+
+static void MessageFunction(void *event_data){
+    //xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
+    esp_mqtt_event_handle_t event = event_data;
+    char msg_data[MAX_N_CHARS];
+    sprintf(msg_data, "%.*s", event->data_len, event->data);
+    //printf(msg_data);
+    //printf("%d", strcmp(msg_data, CORREO_1));
+    
+    if (strcmp(msg_data, CORREO) == 0){
+        printf("--------------------------------------------\r\n");
+        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        printf("--------------------------------------------\r\n");
+    }
+}
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -55,29 +77,32 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
-    int msg_id;
+    int msg_id = 0;
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
+        MQTT_CONNECTED = 1;
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+        /*
         msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
 
         msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
+        */
+        msg_id = esp_mqtt_client_subscribe(client, "LSE/instalaciones/despachos/+/email_ocupante", 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
+       // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
+       // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_DISCONNECTED:
+        MQTT_CONNECTED = 0;
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
+       // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
@@ -88,8 +113,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        MessageFunction(event_data);
+      //  printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+      //  printf("DATA=%.*s\r\n", event->data_len, event->data);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -111,6 +137,7 @@ static void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = CONFIG_BROKER_URL,
+        .broker.address.port = 1885
     };
 #if CONFIG_BROKER_URL_FROM_STDIN
     char line[128];
@@ -138,10 +165,33 @@ static void mqtt_app_start(void)
 #endif /* CONFIG_BROKER_URL_FROM_STDIN */
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    mqtt_client = client;
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
 }
+
+/*
+void Publisher_Task(void *params) {
+    int msg_id = 0;
+    ESP_LOGI(TAG,"Publisher_Task");
+    char topic[MAX_N_CHARS] = "";
+    char payload[MAX_N_CHARS] = "";
+
+    while (true) {
+        if(MQTT_CONNECTED) {
+            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+            ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
+            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        }
+        else{
+            ESP_LOGI(TAG,"[Publisher_Task][MQTT NOT CONNECTED]");
+        }    
+        vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
+    }
+}
+*/
 
 void app_main(void)
 {
