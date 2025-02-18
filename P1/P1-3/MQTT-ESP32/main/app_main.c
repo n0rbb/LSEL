@@ -32,8 +32,8 @@
 
 #define PUBLISH_PERIOD 2000
 #define MAX_N_CHARS 500
-//#define CORREO "d.muniz@alumnos.upm.es"
-#define CORREO "mario.demiguel@alumnos.upm.es"
+#define CORREO "d.muniz@alumnos.upm.es"
+//#define CORREO "mario.demiguel@alumnos.upm.es"
 
 static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
@@ -52,6 +52,7 @@ static void MessageFunction(void *event_data){
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
         printf("--------------------------------------------\r\n");
+        esp_mqtt_client_unsubscribe(mqtt_client, "LSE/instalaciones/despachos/+/email_ocupante");
     }
 }
 
