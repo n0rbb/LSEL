@@ -1,4 +1,4 @@
-/* * Data converted from C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/MQTT-ESP32/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 #if !defined (__APPLE__) && !defined (__linux__)
