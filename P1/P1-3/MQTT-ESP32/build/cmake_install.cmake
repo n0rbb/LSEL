@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/tcp
+# Install script for directory: C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/MQTT-ESP32
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/tcp/build/esp-idf/cmake_install.cmake")
+  include("C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/MQTT-ESP32/build/esp-idf/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -57,6 +57,6 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-  file(WRITE "C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/tcp/build/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/MQTT-ESP32/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/tcp/main
+# Install script for directory: C:/Users/Portatil/Desktop/Trabajos/Practicas/LSEL/P1/P1-3/MQTT-ESP32/main
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
