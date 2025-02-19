@@ -39,6 +39,7 @@ static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
 esp_mqtt_client_handle_t mqtt_client = NULL;
 char despacho[MAX_N_CHARS] = "33";
+
 static void MessageFunction(void *event_data){
     //xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
     esp_mqtt_event_handle_t event = event_data;
@@ -51,10 +52,20 @@ static void MessageFunction(void *event_data){
     if (strcmp(msg_data, CORREO) == 0){
         char msg_topic[MAX_N_CHARS];
         sprintf(msg_topic, "%.*s", event->topic_len, event->topic);
-        despacho = strtok(msg_topic, "/"); //LSE
-        if (despacho) despacho = strtok(NULL, "/"); //Instalaciones
-        if (despacho) despacho = strtok(NULL, "/"); //Despachos
-        if (despacho) despacho = strtok(NULL, "/"); // #despacho, la que queremos
+        strncpy(despacho, strtok(msg_topic, "/"), MAX_N_CHARS - 1);
+        despacho[MAX_N_CHARS - 1] = '\0'; //LSE
+        if (despacho) {
+            strncpy(despacho, strtok(msg_topic, "/"), MAX_N_CHARS - 1);
+            despacho[MAX_N_CHARS - 1] = '\0'; //Instalaciones
+        }
+        if (despacho) {
+            strncpy(despacho, strtok(msg_topic, "/"), MAX_N_CHARS - 1);
+            despacho[MAX_N_CHARS - 1] = '\0'; //Despachos
+        }
+        if (despacho) {
+            strncpy(despacho, strtok(msg_topic, "/"), MAX_N_CHARS - 1);
+            despacho[MAX_N_CHARS - 1] = '\0'; // #despacho, la que queremos
+        }
         printf("--------------------------------------------\r\n");
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
