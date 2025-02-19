@@ -32,6 +32,8 @@
 
 #define PUBLISH_PERIOD 2000
 #define MAX_N_CHARS 500
+#define DESP_CYCLES 3 //Number of cycles for despacho
+#define MAG_CYCLES 4 //Number of cycles for topic
 #define CORREO "d.muniz@alumnos.upm.es"
 //#define CORREO "mario.demiguel@alumnos.upm.es"
 
@@ -39,6 +41,14 @@ static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
 esp_mqtt_client_handle_t mqtt_client = NULL;
 char *despacho;
+
+char* get_parameter(char msg_topic[MAX_N_CHARS], int cycle) {
+    char *parameter = strtok(msg_topic, "/");
+    for (int i = 0; i < cycle; i++) {
+        parameter = strtok(NULL, "/");
+    }
+    return parameter;
+}
 
 static void MessageFunction(void *event_data){
     //xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
@@ -52,10 +62,7 @@ static void MessageFunction(void *event_data){
     if (strcmp(msg_data, CORREO) == 0){
         char msg_topic[MAX_N_CHARS];
         sprintf(msg_topic, "%.*s", event->topic_len, event->topic);
-        despacho = strtok(msg_topic, "/"); //LSE
-        if (despacho) despacho = strtok(NULL, "/"); //Instalaciones
-        if (despacho) despacho = strtok(NULL, "/"); //Despachos
-        if (despacho) despacho = strtok(NULL, "/"); // #despacho, la que queremos
+        despacho = get_parameter(msg_topic, DESP_CYCLES);
         printf("--------------------------------------------\r\n");
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
