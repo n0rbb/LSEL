@@ -18,6 +18,6 @@ An MQTT Client that subscribes to both date and time topics. \
 * ``clientname``: specifies client id. Default value: DEFAULT.
 
 ## 3) mosquitto.conf
-Mosquitto configuration file to run on port 1885. May be placed under /etc/mosquitto folder. ``allow_anonymous`` line may be removed. \ 
+Mosquitto configuration file to run on port 1885. May be placed under /etc/mosquitto folder. ``allow_anonymous`` line may be removed.\
 **Start the broker with** \
 ``> sudo mosquitto -c /etc/mosquitto/mosquitto.conf``
