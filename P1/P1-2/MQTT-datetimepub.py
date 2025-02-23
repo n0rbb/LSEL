@@ -29,14 +29,14 @@ def publish_msg(ourClient, mode):
 	tim = f"It’s {datetime.now().strftime('%H:%M:%S %p')}"
 	day = get_date()
 	if mode == "t" or mode == "h":
-		ourClient.publish(topics[0], tim)
+		ourClient.publish(topics[0], f"{client_id} @ {topics[0]}: {tim}")
 		
 	elif mode == "d":
-		ourClient.publish(topics[1], day)
+		ourClient.publish(topics[1], f"{client_id} @ {topics[1]}: {day}")
 	
 	elif mode == "b": #Case to publish both	
-		ourClient.publish(topics[0], tim)
-		ourClient.publish(topics[1], day)
+		ourClient.publish(topics[0], f"{client_id} @ {topics[0]}: {tim}")
+		ourClient.publish(topics[1], f"{client_id} @ {topics[1]}: {day}")
 
 ##Main program setup
 #Compruebo los argumentos pasados
@@ -52,11 +52,11 @@ else:
 
 #Append mode to ID name to avoid a conflict where the broker would skip messages
 #if two versions of this script were running at the same time with the same ID
-client_id = f"{client_id} > {mode}"
+client_id = f"{client_id}>{mode}"
 
 ourClient = mqtt.Client(client_id) # Create a MQTT client object
-ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker. Test with 192.168.1.42 
-ourClient.loop_start() # Start the MQTT client
+ourClient.connect("192.168.1.42", 1885) # Connect to the test MQTT broker. Test with 192.168.1.42 
+ourClient.loop_start() # Start the MQTT client 10.8.42.19
 
 #initialize stored_seconds with an unattainable value
 stored_seconds = 80
