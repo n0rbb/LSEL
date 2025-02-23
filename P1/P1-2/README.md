@@ -10,7 +10,7 @@ An MQTT Client that subscribes to date and time topics. \
 	* MQTT_NETWORK/TIME : time channel.
 	* MQTT_NETWORK/DATE : date channel.
 See that the default value shall subscribe to both DATE and TIME channels. \
-Example call: python3 
+
  ## 2) MQTT-datetimepub.py
  An MQTT Client that publishes date, time or both to the date / time topics. \
  **Run it as:** \
