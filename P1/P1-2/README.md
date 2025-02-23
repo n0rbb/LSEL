@@ -12,9 +12,9 @@ An MQTT Client that subscribes to both date and time topics.
  ``> python3 MQTT-datetimepub.py mode clientname``
  ### Parameters
  * ``mode``: specifies publisher operation mode. Default value: b.
-	> t : Publishes current time to TIME topic (also works with h)
-	> d : Publishes current date to DATE topic
-	> b : Performs both t & d tasks
+	* t : Publishes current time to TIME topic (also works with h)
+	* d : Publishes current date to DATE topic
+	* b : Performs both t & d tasks
 * ``clientname``: specifies client id. Default value: DEFAULT.
 
 ## 3) mosquitto.conf
