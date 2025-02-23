@@ -1,11 +1,16 @@
 # MQTT publisher and subscriber
 Brief description of the included files for the LSEL assignment 1.2 and instructions on proper usage.
 ## 1) MQTT-datetimesub.py
-An MQTT Client that subscribes to both date and time topics. \
+An MQTT Client that subscribes to date and time topics. \
 **Run it as:** \
- ``> python3 MQTT-datetimesub.py clientname``
+ ``> python3 MQTT-datetimesub.py clientname topic``
  ### Parameters
 * ``clientname``: specifies client id. Default value: DEFAULT. 
+* ``topic`` : specifies to which topic shall the client subscribe. Default value: MQTT_NETWORK/# 
+	* MQTT_NETWORK/TIME : time channel.
+	* MQTT_NETWORK/DATE : date channel.
+See that the default value shall subscribe to both DATE and TIME channels. \
+Example call: python3 
  ## 2) MQTT-datetimepub.py
  An MQTT Client that publishes date, time or both to the date / time topics. \
  **Run it as:** \

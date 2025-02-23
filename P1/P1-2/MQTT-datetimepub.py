@@ -55,8 +55,8 @@ else:
 client_id = f"{client_id}>{mode}"
 
 ourClient = mqtt.Client(client_id) # Create a MQTT client object
-ourClient.connect("192.168.1.42", 1885) # Connect to the test MQTT broker. Test with 192.168.1.42 
-ourClient.loop_start() # Start the MQTT client 10.8.42.19
+ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker. Test with 192.168.1.42 
+ourClient.loop_start() # Start the MQTT client 
 
 #initialize stored_seconds with an unattainable value
 stored_seconds = 80
