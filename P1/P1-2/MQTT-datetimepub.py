@@ -25,7 +25,7 @@ def messageFunction (client, userdata, message):
 
 
 def publish_msg(ourClient, mode):
-	topics = ['MQTT_NETWORK/DMZ/TIME', 'MQTT_NETWORK/DMZ/DATE']
+	topics = ['MQTT_NETWORK/TIME', 'MQTT_NETWORK/DATE']
 	tim = f"It’s {datetime.now().strftime('%H:%M:%S %p')}"
 	day = get_date()
 	if mode == "t" or mode == "h":
@@ -41,12 +41,12 @@ def publish_msg(ourClient, mode):
 ##Main program setup
 #Compruebo los argumentos pasados
 if len(sys.argv) < 3:
-	client_id = "DEFAULT" #No mode entered by user
+	client_id = "DEFAULT" #No client id entered by user
 else:
 	client_id = str(sys.argv[2])
 	
 if len(sys.argv) < 2:
-	mode = "b" #no client id entered by user
+	mode = "b" #no mode entered by user
 else:
 	mode = str(sys.argv[1])
 
@@ -55,7 +55,7 @@ else:
 client_id = f"{client_id} > {mode}"
 
 ourClient = mqtt.Client(client_id) # Create a MQTT client object
-ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker
+ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker. Test with 192.168.1.42 
 ourClient.loop_start() # Start the MQTT client
 
 #initialize stored_seconds with an unattainable value

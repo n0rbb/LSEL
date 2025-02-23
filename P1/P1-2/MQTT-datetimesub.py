@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt # Import the MQTT library
 import time # The time library is useful for delays
 from itertools import cycle
 from datetime import datetime
+import sys
 
 # Our "on message" event
 def messageFunction (client, userdata, message):
@@ -9,9 +10,16 @@ def messageFunction (client, userdata, message):
 	message = str(message.payload.decode("utf-8"))
 	print(message)
  
+
+if len(sys.argv) < 2:
+	clientid = "DEFAULT"
+else:
+	clientid = sys.argv[1]
+
+
 ourClient = mqtt.Client("DMZ") # Create a MQTT client object
-ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker
-ourClient.subscribe("MQTT_NETWORK/DMZ/#") # Subscribe to the topic AC_unit
+ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker -- Test with 192.168.1.42
+ourClient.subscribe("MQTT_NETWORK/#") # Subscribe to both topics (time/date)
 ourClient.on_message = messageFunction # Attach the messageFunction to subscription
 ourClient.loop_start() # Start the MQTT client
 
