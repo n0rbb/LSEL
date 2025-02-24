@@ -34,15 +34,38 @@
 #define MAX_N_CHARS 300
 #define MAX_FIELD_CHARS 15
 #define MAX_DESP_CHARS 3
+#define NSAMPLES 5
 #define DESP_CYCLES 3 // Number of cycles for despacho
 #define MAG_CYCLES 4  // Number of cycles for topic
-#define CORREO "d.muniz@alumnos.upm.es"
-// #define CORREO "mario.demiguel@alumnos.upm.es"
+#define MIN_TEMP 20
+#define MAX_TEMP 25
+#define MIN_HUM 30
+#define MAX_HUM 60
+#define MIN_LUZ 300
+#define MAX_LUZ 500
+#define MAX_AIRE 1000
+//#define CORREO "d.muniz@alumnos.upm.es"
+#define CORREO "mario.demiguel@alumnos.upm.es"
 
 static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
 esp_mqtt_client_handle_t mqtt_client = NULL;
 char despacho[MAX_DESP_CHARS];
+float aire[NSAMPLES] = {500, 500, 500, 500, 500};
+float humedad[NSAMPLES] = {45, 45, 45, 45, 45};
+float luz[NSAMPLES] = {400, 400, 400, 400, 400};
+float temperatura[NSAMPLES] = {22.5, 22.5, 22.5, 22.5, 22.5};
+float mean_aire = 0, mean_humedad = 0, mean_luz = 0, mean_temperatura = 0;
+
+float fmean(float *array, uint8_t size)
+{
+    float sum = 0;
+    for (uint8_t i = 0; i < size; i++)
+    {
+        sum += array[i];
+    }
+    return sum / size;
+}
 
 void get_parameter(char *msg_topic, char *target_str, int cycle)
 {
@@ -56,9 +79,102 @@ void get_parameter(char *msg_topic, char *target_str, int cycle)
     strcpy(target_str, temp_str);
 }
 
+void Publisher_Task(void *params) {
+    int msg_id = 0;
+    ESP_LOGI(TAG,"Publisher_Task");
+    char topic[MAX_N_CHARS] = "";
+    char payload[MAX_N_CHARS] = "";
+    uint8_t alarma_flag = 0;
+    char alarma_aire[6] = "", alarma_humedad[14] = "", alarma_luz[10] = "", alarma_temperatura[18] = "";
+
+    while (true) {
+        vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
+        if(MQTT_CONNECTED) {
+            alarma_aire[0] = '\0', alarma_humedad[0] = '\0', alarma_luz[0] = '\0', alarma_temperatura[0] = '\0';
+            //Alarma Aire
+            mean_aire = fmean(aire, NSAMPLES);
+            if(mean_aire > MAX_AIRE) {
+                sprintf(alarma_aire, "AIRE ");
+                alarma_flag++;
+            }
+
+            //Alarma Humedad
+            mean_humedad = fmean(humedad, NSAMPLES);
+            if(mean_humedad > MAX_HUM) {
+                sprintf(alarma_humedad, "HUMEDAD ALTA ");
+                alarma_flag++;
+            }
+            else if(mean_humedad < MIN_HUM) {
+                sprintf(alarma_humedad, "HUMEDAD BAJA ");
+                alarma_flag++;
+            }
+
+            //Alarma Luz
+            mean_luz = fmean(luz, NSAMPLES);
+            if (mean_luz > MAX_LUZ) {
+                sprintf(alarma_luz, "LUZ ALTA ");
+                alarma_flag++;
+            }
+            else if(mean_luz < MIN_LUZ) {
+                sprintf(alarma_luz, "LUZ BAJA ");
+                alarma_flag++;
+            }
+
+            //Alarma Temperatura
+            mean_temperatura = fmean(temperatura, NSAMPLES);
+            if(mean_temperatura > MAX_TEMP) {
+                sprintf(alarma_temperatura, "TEMPERATURA ALTA");
+                alarma_flag++;
+            }
+            else if(mean_temperatura < MIN_TEMP) {
+                sprintf(alarma_temperatura, "TEMPERATURA BAJA");
+                alarma_flag++;
+            }
+
+            //Publishing means
+            //Aire
+            sprintf(topic, "LSE/trabajadores/%s/promedios/aire", CORREO);
+            sprintf(payload, "%.2f", mean_aire);
+            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+
+            //Humedad
+            sprintf(topic, "LSE/trabajadores/%s/promedios/humedad", CORREO);
+            sprintf(payload, "%.2f", mean_humedad);
+            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+
+            //Luz
+            sprintf(topic, "LSE/trabajadores/%s/promedios/luz", CORREO);
+            sprintf(payload, "%.2f", mean_luz);
+            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+
+            //Temperatura
+            sprintf(topic, "LSE/trabajadores/%s/promedios/temperatura", CORREO);
+            sprintf(payload, "%.2f", mean_temperatura);
+            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+            //msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+
+            //Publishing alarms
+            if (alarma_flag != 0){
+                sprintf(topic, "LSE/trabajadores/%s/alerta", CORREO);
+                sprintf(payload, "%s%s%s%s", alarma_aire, alarma_humedad, alarma_luz, alarma_temperatura);
+                printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+                msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+            }
+            //ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
+            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        }
+        else{
+            ESP_LOGI(TAG,"[Publisher_Task][MQTT NOT CONNECTED]");
+        }
+    }
+}
+
 static void MessageFunction(void *event_data)
 {
-    // xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
     esp_mqtt_event_handle_t event = event_data;
     char msg_data[MAX_N_CHARS];
     char msg_topic[MAX_N_CHARS];
@@ -92,35 +208,48 @@ static void MessageFunction(void *event_data)
             esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
             sprintf(subs_topic, "LSE/instalaciones/despachos/%s/temperatura", despacho);
             esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
         }
     }
     if (strcmp(rcvd_field, "aire") == 0)
     {
-        printf("--------------------------------------------\r\n");
-        printf("TOPIC=%s\r\n", msg_topic);
-        printf("DATA=%s\r\n", msg_data);
-        printf("--------------------------------------------\r\n");
+        uint8_t i = 0;
+        for (i = NSAMPLES -1; i > 0; i--)
+        {
+            aire[i] = aire[i - 1];
+        }
+        aire[0] = atof(msg_data);
+        mean_aire = fmean(aire, NSAMPLES);
     }
     if (strcmp(rcvd_field, "humedad") == 0)
     {
-        printf("--------------------------------------------\r\n");
-        printf("TOPIC=%s\r\n", msg_topic);
-        printf("DATA=%s\r\n", msg_data);
-        printf("--------------------------------------------\r\n");
+        uint8_t i = 0;
+        for (i = NSAMPLES - 1; i > 0; i--)
+        {
+            humedad[i] = humedad[i - 1];
+        }
+        humedad[0] = atof(msg_data);
+        mean_humedad = fmean(humedad, NSAMPLES);
     }
     if (strcmp(rcvd_field, "luz") == 0)
     {
-        printf("--------------------------------------------\r\n");
-        printf("TOPIC=%s\r\n", msg_topic);
-        printf("DATA=%s\r\n", msg_data);
-        printf("--------------------------------------------\r\n");
+        uint8_t i = 0;
+        for (i = NSAMPLES - 1; i > 0; i--)
+        {
+            luz[i] = luz[i - 1];
+        }
+        luz[0] = atof(msg_data);
+        mean_luz = fmean(luz, NSAMPLES);
     }
     if (strcmp(rcvd_field, "temperatura") == 0)
     {
-        printf("--------------------------------------------\r\n");
-        printf("TOPIC=%s\r\n", msg_topic);
-        printf("DATA=%s\r\n", msg_data);
-        printf("--------------------------------------------\r\n");
+        uint8_t i = 0;
+        for (i = NSAMPLES - 1; i > 0; i--)
+        {
+            temperatura[i] = temperatura[i - 1];
+        }
+        temperatura[0] = atof(msg_data);
+        mean_temperatura = fmean(temperatura, NSAMPLES);
     }
 }
 
@@ -247,28 +376,6 @@ static void mqtt_app_start(void)
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
 }
-
-/*
-void Publisher_Task(void *params) {
-    int msg_id = 0;
-    ESP_LOGI(TAG,"Publisher_Task");
-    char topic[MAX_N_CHARS] = "";
-    char payload[MAX_N_CHARS] = "";
-
-    while (true) {
-        if(MQTT_CONNECTED) {
-            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
-            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-            ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-        }
-        else{
-            ESP_LOGI(TAG,"[Publisher_Task][MQTT NOT CONNECTED]");
-        }
-        vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
-    }
-}
-*/
 
 void app_main(void)
 {
