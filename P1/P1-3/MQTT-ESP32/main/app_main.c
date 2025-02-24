@@ -44,8 +44,8 @@
 #define MIN_LUZ 300
 #define MAX_LUZ 500
 #define MAX_AIRE 1000
-//#define CORREO "d.muniz@alumnos.upm.es"
-#define CORREO "mario.demiguel@alumnos.upm.es"
+#define CORREO "d.muniz@alumnos.upm.es"
+//#define CORREO "mario.demiguel@alumnos.upm.es"
 
 static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
@@ -79,93 +79,67 @@ void get_parameter(char *msg_topic, char *target_str, int cycle)
     strcpy(target_str, temp_str);
 }
 
-void Publisher_Task(void *params) {
-    int msg_id = 0;
-    ESP_LOGI(TAG,"Publisher_Task");
+void publish_alarma(char *mag)
+{
     char topic[MAX_N_CHARS] = "";
     char payload[MAX_N_CHARS] = "";
-    uint8_t alarma_flag = 0;
-    char alarma_aire[6] = "", alarma_humedad[14] = "", alarma_luz[10] = "", alarma_temperatura[18] = "";
+    int msg_id = 0;
+    sprintf(topic, "LSE/trabajadores/%s/alerta", CORREO);
+    sprintf(payload, "%s", mag);
+    printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+    msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+    ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
+    ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+}
 
+void publish_promedios(char *mag, float mean)
+{
+    char topic[MAX_N_CHARS] = "";
+    char payload[MAX_N_CHARS] = "";
+    int msg_id = 0;
+    sprintf(topic, "LSE/trabajadores/%s/promedios/%s", CORREO, mag);
+    sprintf(payload, "%.2f", mean);
+    printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
+    msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
+    ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
+    ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+}
+
+void Publisher_Task(void *params) {
+    ESP_LOGI(TAG,"Publisher_Task");
+    
     while (true) {
         vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
         if(MQTT_CONNECTED) {
-            alarma_aire[0] = '\0', alarma_humedad[0] = '\0', alarma_luz[0] = '\0', alarma_temperatura[0] = '\0';
             //Alarma Aire
             mean_aire = fmean(aire, NSAMPLES);
             if(mean_aire > MAX_AIRE) {
-                sprintf(alarma_aire, "AIRE ");
-                alarma_flag++;
+                publish_alarma("Aire");
             }
 
             //Alarma Humedad
             mean_humedad = fmean(humedad, NSAMPLES);
-            if(mean_humedad > MAX_HUM) {
-                sprintf(alarma_humedad, "HUMEDAD ALTA ");
-                alarma_flag++;
-            }
-            else if(mean_humedad < MIN_HUM) {
-                sprintf(alarma_humedad, "HUMEDAD BAJA ");
-                alarma_flag++;
+            if((mean_humedad > MAX_HUM) || (mean_humedad < MIN_HUM)) {
+                publish_alarma("Humedad");
             }
 
             //Alarma Luz
             mean_luz = fmean(luz, NSAMPLES);
-            if (mean_luz > MAX_LUZ) {
-                sprintf(alarma_luz, "LUZ ALTA ");
-                alarma_flag++;
-            }
-            else if(mean_luz < MIN_LUZ) {
-                sprintf(alarma_luz, "LUZ BAJA ");
-                alarma_flag++;
+            if ((mean_luz > MAX_LUZ) || (mean_luz < MIN_LUZ)) {
+                publish_alarma("Luz");
             }
 
             //Alarma Temperatura
             mean_temperatura = fmean(temperatura, NSAMPLES);
-            if(mean_temperatura > MAX_TEMP) {
-                sprintf(alarma_temperatura, "TEMPERATURA ALTA");
-                alarma_flag++;
-            }
-            else if(mean_temperatura < MIN_TEMP) {
-                sprintf(alarma_temperatura, "TEMPERATURA BAJA");
-                alarma_flag++;
+            if((mean_temperatura > MAX_TEMP) || (mean_temperatura < MIN_TEMP)) {
+                publish_alarma("Temperatura");
             }
 
             //Publishing means
-            //Aire
-            sprintf(topic, "LSE/trabajadores/%s/promedios/aire", CORREO);
-            sprintf(payload, "%.2f", mean_aire);
-            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
-            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-
-            //Humedad
-            sprintf(topic, "LSE/trabajadores/%s/promedios/humedad", CORREO);
-            sprintf(payload, "%.2f", mean_humedad);
-            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
-            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-
-            //Luz
-            sprintf(topic, "LSE/trabajadores/%s/promedios/luz", CORREO);
-            sprintf(payload, "%.2f", mean_luz);
-            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
-            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-
-            //Temperatura
-            sprintf(topic, "LSE/trabajadores/%s/promedios/temperatura", CORREO);
-            sprintf(payload, "%.2f", mean_temperatura);
-            printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
-            msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-            //msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-
-            //Publishing alarms
-            if (alarma_flag != 0){
-                sprintf(topic, "LSE/trabajadores/%s/alerta", CORREO);
-                sprintf(payload, "%s%s%s%s", alarma_aire, alarma_humedad, alarma_luz, alarma_temperatura);
-                printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
-                msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-            }
-            //ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+            publish_promedios("aire", mean_aire);
+            publish_promedios("humedad", mean_humedad);
+            publish_promedios("luz", mean_luz);
+            publish_promedios("temperatura", mean_temperatura);
         }
         else{
             ESP_LOGI(TAG,"[Publisher_Task][MQTT NOT CONNECTED]");
