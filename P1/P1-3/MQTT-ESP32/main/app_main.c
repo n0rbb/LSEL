@@ -30,51 +30,104 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-#define PUBLISH_PERIOD 2000
-#define MAX_N_CHARS 500
-#define DESP_CYCLES 3 //Number of cycles for despacho
-#define MAG_CYCLES 4 //Number of cycles for topic
+#define PUBLISH_PERIOD 5000
+#define MAX_N_CHARS 300
+#define MAX_FIELD_CHARS 15
+#define MAX_DESP_CHARS 3
+#define DESP_CYCLES 3 // Number of cycles for despacho
+#define MAG_CYCLES 4  // Number of cycles for topic
 #define CORREO "d.muniz@alumnos.upm.es"
-//#define CORREO "mario.demiguel@alumnos.upm.es"
+// #define CORREO "mario.demiguel@alumnos.upm.es"
 
 static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
 esp_mqtt_client_handle_t mqtt_client = NULL;
-char *despacho;
+char despacho[MAX_DESP_CHARS];
 
-char* get_parameter(char msg_topic[MAX_N_CHARS], int cycle) {
-    char *parameter = strtok(msg_topic, "/");
-    for (int i = 0; i < cycle; i++) {
-        parameter = strtok(NULL, "/");
+void get_parameter(char *msg_topic, char *target_str, int cycle)
+{
+    char temp_msg_topic[MAX_N_CHARS];
+    strcpy(temp_msg_topic, msg_topic);
+    char *temp_str = strtok(temp_msg_topic, "/");
+    for (int i = 0; i < cycle; i++)
+    {
+        temp_str = strtok(NULL, "/");
     }
-    return parameter;
+    strcpy(target_str, temp_str);
 }
 
-static void MessageFunction(void *event_data){
-    //xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
+static void MessageFunction(void *event_data)
+{
+    // xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
     esp_mqtt_event_handle_t event = event_data;
     char msg_data[MAX_N_CHARS];
-    
+    char msg_topic[MAX_N_CHARS];
+    char rcvd_field[MAX_FIELD_CHARS];
+
+    sprintf(msg_topic, "%.*s", event->topic_len, event->topic);
     sprintf(msg_data, "%.*s", event->data_len, event->data);
-    //printf(msg_data);
-    //printf("%d", strcmp(msg_data, CORREO_1));
-    
-    if (strcmp(msg_data, CORREO) == 0){
-        char msg_topic[MAX_N_CHARS];
-        sprintf(msg_topic, "%.*s", event->topic_len, event->topic);
-        despacho = get_parameter(msg_topic, DESP_CYCLES);
+    get_parameter(msg_topic, rcvd_field, MAG_CYCLES);
+    // printf(msg_data);
+    // printf("%d", strcmp(msg_data, CORREO_1));
+
+    if (strcmp(rcvd_field, "email_ocupante") == 0)
+    {
+        if (strcmp(msg_data, CORREO) == 0)
+        {
+            get_parameter(msg_topic, despacho, DESP_CYCLES);
+            printf("--------------------------------------------\r\n");
+            printf("TOPIC=%s\r\n", msg_topic);
+            printf("DATA=%s\r\n", msg_data);
+            printf("Despacho: %s\r\n", despacho);
+            printf("--------------------------------------------\r\n");
+            esp_mqtt_client_unsubscribe(mqtt_client, "LSE/instalaciones/despachos/+/email_ocupante");
+
+            // Subscribing to the topics
+            char subs_topic[MAX_N_CHARS];
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/aire", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/humedad", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/luz", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/temperatura", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+        }
+    }
+    if (strcmp(rcvd_field, "aire") == 0)
+    {
         printf("--------------------------------------------\r\n");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
-        printf("Despacho: %s\r\n", despacho);
+        printf("TOPIC=%s\r\n", msg_topic);
+        printf("DATA=%s\r\n", msg_data);
         printf("--------------------------------------------\r\n");
-        esp_mqtt_client_unsubscribe(mqtt_client, "LSE/instalaciones/despachos/+/email_ocupante");
+    }
+    if (strcmp(rcvd_field, "humedad") == 0)
+    {
+        printf("--------------------------------------------\r\n");
+        printf("TOPIC=%s\r\n", msg_topic);
+        printf("DATA=%s\r\n", msg_data);
+        printf("--------------------------------------------\r\n");
+    }
+    if (strcmp(rcvd_field, "luz") == 0)
+    {
+        printf("--------------------------------------------\r\n");
+        printf("TOPIC=%s\r\n", msg_topic);
+        printf("DATA=%s\r\n", msg_data);
+        printf("--------------------------------------------\r\n");
+    }
+    if (strcmp(rcvd_field, "temperatura") == 0)
+    {
+        printf("--------------------------------------------\r\n");
+        printf("TOPIC=%s\r\n", msg_topic);
+        printf("DATA=%s\r\n", msg_data);
+        printf("--------------------------------------------\r\n");
     }
 }
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
-    if (error_code != 0) {
+    if (error_code != 0)
+    {
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
@@ -95,7 +148,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
     int msg_id = 0;
-    switch ((esp_mqtt_event_id_t)event_id) {
+    switch ((esp_mqtt_event_id_t)event_id)
+    {
     case MQTT_EVENT_CONNECTED:
         MQTT_CONNECTED = 1;
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
@@ -109,8 +163,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         msg_id = esp_mqtt_client_subscribe(client, "LSE/instalaciones/despachos/+/email_ocupante", 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-       // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-       // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
+        // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
+        // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_DISCONNECTED:
         MQTT_CONNECTED = 0;
@@ -119,7 +173,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-       // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
+        // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
@@ -131,17 +185,17 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         MessageFunction(event_data);
-      //  printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-      //  printf("DATA=%.*s\r\n", event->data_len, event->data);
+        //  printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        //  printf("DATA=%.*s\r\n", event->data_len, event->data);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
-        if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
+        if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
+        {
             log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
             log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
-            log_error_if_nonzero("captured as transport's socket errno",  event->error_handle->esp_transport_sock_errno);
+            log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
             ESP_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
-
         }
         break;
     default:
@@ -154,20 +208,24 @@ static void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = CONFIG_BROKER_URL,
-        .broker.address.port = 1885
-    };
+        .broker.address.port = 1885};
 #if CONFIG_BROKER_URL_FROM_STDIN
     char line[128];
 
-    if (strcmp(mqtt_cfg.broker.address.uri, "FROM_STDIN") == 0) {
+    if (strcmp(mqtt_cfg.broker.address.uri, "FROM_STDIN") == 0)
+    {
         int count = 0;
         printf("Please enter url of mqtt broker\n");
-        while (count < 128) {
+        while (count < 128)
+        {
             int c = fgetc(stdin);
-            if (c == '\n') {
+            if (c == '\n')
+            {
                 line[count] = '\0';
                 break;
-            } else if (c > 0 && c < 127) {
+            }
+            else if (c > 0 && c < 127)
+            {
                 line[count] = c;
                 ++count;
             }
@@ -175,7 +233,9 @@ static void mqtt_app_start(void)
         }
         mqtt_cfg.broker.address.uri = line;
         printf("Broker url: %s\n", line);
-    } else {
+    }
+    else
+    {
         ESP_LOGE(TAG, "Configuration mismatch: wrong broker url");
         abort();
     }
@@ -204,7 +264,7 @@ void Publisher_Task(void *params) {
         }
         else{
             ESP_LOGI(TAG,"[Publisher_Task][MQTT NOT CONNECTED]");
-        }    
+        }
         vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
     }
 }
