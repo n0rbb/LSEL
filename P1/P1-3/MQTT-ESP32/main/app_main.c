@@ -107,7 +107,7 @@ void publish_promedios(char *mag, float mean)
 
 void Publisher_Task(void *params) {
     ESP_LOGI(TAG,"Publisher_Task");
-    
+
     while (true) {
         vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
         if(MQTT_CONNECTED) {
@@ -119,22 +119,31 @@ void Publisher_Task(void *params) {
 
             //Alarma Humedad
             mean_humedad = fmean(humedad, NSAMPLES);
-            if((mean_humedad > MAX_HUM) || (mean_humedad < MIN_HUM)) {
-                publish_alarma("Humedad");
+            if(mean_humedad > MAX_HUM) {
+                publish_alarma("Humedad Alta");
+            }
+            else if(mean_humedad < MIN_HUM) {
+                publish_alarma("Humedad Baja");
             }
 
             //Alarma Luz
             mean_luz = fmean(luz, NSAMPLES);
-            if ((mean_luz > MAX_LUZ) || (mean_luz < MIN_LUZ)) {
-                publish_alarma("Luz");
+            if (mean_luz > MAX_LUZ) {
+                publish_alarma("Luz Alta");
+            }
+            else if(mean_luz < MIN_LUZ) {
+                publish_alarma("Luz Baja");
             }
 
             //Alarma Temperatura
             mean_temperatura = fmean(temperatura, NSAMPLES);
-            if((mean_temperatura > MAX_TEMP) || (mean_temperatura < MIN_TEMP)) {
-                publish_alarma("Temperatura");
+            if(mean_temperatura > MAX_TEMP) {
+                publish_alarma("Temperatura Alta");
             }
-
+            else if(mean_temperatura < MIN_TEMP) {
+                publish_alarma("Temperatura Baja");
+            }
+            
             //Publishing means
             publish_promedios("aire", mean_aire);
             publish_promedios("humedad", mean_humedad);
