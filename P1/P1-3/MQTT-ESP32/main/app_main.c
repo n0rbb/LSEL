@@ -30,8 +30,10 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-#define PUBLISH_PERIOD 2000
-#define MAX_N_CHARS 500
+#define PUBLISH_PERIOD 5000
+#define MAX_N_CHARS 300
+#define MAX_FIELD_CHARS 15
+#define MAX_DESP_CHARS 3
 #define DESP_CYCLES 3 // Number of cycles for despacho
 #define MAG_CYCLES 4  // Number of cycles for topic
 #define CORREO "d.muniz@alumnos.upm.es"
@@ -40,16 +42,18 @@
 static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
 esp_mqtt_client_handle_t mqtt_client = NULL;
-char *despacho;
+char despacho[MAX_DESP_CHARS];
 
-char *get_parameter(char msg_topic[MAX_N_CHARS], int cycle)
+void get_parameter(char *msg_topic, char *target_str, int cycle)
 {
-    char *parameter = strtok(msg_topic, "/");
+    char temp_msg_topic[MAX_N_CHARS];
+    strcpy(temp_msg_topic, msg_topic);
+    char *temp_str = strtok(temp_msg_topic, "/");
     for (int i = 0; i < cycle; i++)
     {
-        parameter = strtok(NULL, "/");
+        temp_str = strtok(NULL, "/");
     }
-    return parameter;
+    strcpy(target_str, temp_str);
 }
 
 static void MessageFunction(void *event_data)
@@ -58,71 +62,73 @@ static void MessageFunction(void *event_data)
     esp_mqtt_event_handle_t event = event_data;
     char msg_data[MAX_N_CHARS];
     char msg_topic[MAX_N_CHARS];
-    char *rcvd_field;
-
+    char rcvd_field[MAX_FIELD_CHARS];
 
     sprintf(msg_topic, "%.*s", event->topic_len, event->topic);
     sprintf(msg_data, "%.*s", event->data_len, event->data);
-    rcvd_field = get_parameter(msg_topic, MAG_CYCLES);
+    get_parameter(msg_topic, rcvd_field, MAG_CYCLES);
     // printf(msg_data);
     // printf("%d", strcmp(msg_data, CORREO_1));
 
-    if (strcmp(msg_data, CORREO) == 0)
+    if (strcmp(rcvd_field, "email_ocupante") == 0)
     {
-        sprintf(msg_topic, "%.*s", event->topic_len, event->topic);
-        despacho = get_parameter(msg_topic, DESP_CYCLES);
-        printf("--------------------------------------------\r\n");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
-        printf("Despacho: %s\r\n", despacho);
-        printf("--------------------------------------------\r\n");
-        esp_mqtt_client_unsubscribe(mqtt_client, "LSE/instalaciones/despachos/+/email_ocupante");
+        if (strcmp(msg_data, CORREO) == 0)
+        {
+            get_parameter(msg_topic, despacho, DESP_CYCLES);
+            printf("--------------------------------------------\r\n");
+            printf("TOPIC=%s\r\n", msg_topic);
+            printf("DATA=%s\r\n", msg_data);
+            printf("Despacho: %s\r\n", despacho);
+            printf("--------------------------------------------\r\n");
+            esp_mqtt_client_unsubscribe(mqtt_client, "LSE/instalaciones/despachos/+/email_ocupante");
 
-        // Subscribing to the topics
-        char subs_topic[MAX_N_CHARS];
-        sprintf(subs_topic, "LSE/instalaciones/despachos/%s/aire", despacho);
-        esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
-        sprintf(subs_topic, "LSE/instalaciones/despachos/%s/humedad", despacho);
-        esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
-        sprintf(subs_topic, "LSE/instalaciones/despachos/%s/luz", despacho);
-        esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
-        sprintf(subs_topic, "LSE/instalaciones/despachos/%s/temperatura", despacho);
-        esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            // Subscribing to the topics
+            char subs_topic[MAX_N_CHARS];
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/aire", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/humedad", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/luz", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+            sprintf(subs_topic, "LSE/instalaciones/despachos/%s/temperatura", despacho);
+            esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
+        }
     }
     if (strcmp(rcvd_field, "aire") == 0)
     {
         printf("--------------------------------------------\r\n");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("TOPIC=%s\r\n", msg_topic);
         printf("DATA=%s\r\n", msg_data);
         printf("--------------------------------------------\r\n");
     }
     if (strcmp(rcvd_field, "humedad") == 0)
     {
         printf("--------------------------------------------\r\n");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("TOPIC=%s\r\n", msg_topic);
         printf("DATA=%s\r\n", msg_data);
         printf("--------------------------------------------\r\n");
     }
     if (strcmp(rcvd_field, "luz") == 0)
     {
         printf("--------------------------------------------\r\n");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("TOPIC=%s\r\n", msg_topic);
         printf("DATA=%s\r\n", msg_data);
         printf("--------------------------------------------\r\n");
     }
     if (strcmp(rcvd_field, "temperatura") == 0)
     {
         printf("--------------------------------------------\r\n");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("TOPIC=%s\r\n", msg_topic);
         printf("DATA=%s\r\n", msg_data);
         printf("--------------------------------------------\r\n");
     }
-    static void log_error_if_nonzero(const char *message, int error_code)
+}
+
+static void log_error_if_nonzero(const char *message, int error_code)
+{
+    if (error_code != 0)
     {
-        if (error_code != 0)
-        {
-            ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
-        }
+        ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
 
