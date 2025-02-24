@@ -25,38 +25,38 @@ def messageFunction (client, userdata, message):
 
 
 def publish_msg(ourClient, mode):
-	topics = ['MQTT_NETWORK/DMZ/TIME', 'MQTT_NETWORK/DMZ/DATE']
+	topics = ['MQTT_NETWORK/TIME', 'MQTT_NETWORK/DATE']
 	tim = f"It’s {datetime.now().strftime('%H:%M:%S %p')}"
 	day = get_date()
 	if mode == "t" or mode == "h":
-		ourClient.publish(topics[0], tim)
+		ourClient.publish(topics[0], f"{client_id} @ {topics[0]}: {tim}")
 		
 	elif mode == "d":
-		ourClient.publish(topics[1], day)
+		ourClient.publish(topics[1], f"{client_id} @ {topics[1]}: {day}")
 	
 	elif mode == "b": #Case to publish both	
-		ourClient.publish(topics[0], tim)
-		ourClient.publish(topics[1], day)
+		ourClient.publish(topics[0], f"{client_id} @ {topics[0]}: {tim}")
+		ourClient.publish(topics[1], f"{client_id} @ {topics[1]}: {day}")
 
 ##Main program setup
 #Compruebo los argumentos pasados
 if len(sys.argv) < 3:
-	client_id = "DEFAULT" #No mode entered by user
+	client_id = "DEFAULT" #No client id entered by user
 else:
 	client_id = str(sys.argv[2])
 	
 if len(sys.argv) < 2:
-	mode = "b" #no client id entered by user
+	mode = "b" #no mode entered by user
 else:
 	mode = str(sys.argv[1])
 
 #Append mode to ID name to avoid a conflict where the broker would skip messages
 #if two versions of this script were running at the same time with the same ID
-client_id = f"{client_id} > {mode}"
+client_id = f"{client_id}>{mode}"
 
 ourClient = mqtt.Client(client_id) # Create a MQTT client object
-ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker
-ourClient.loop_start() # Start the MQTT client
+ourClient.connect("10.8.42.19", 1885) # Connect to the test MQTT broker. Test with 192.168.1.42 
+ourClient.loop_start() # Start the MQTT client 
 
 #initialize stored_seconds with an unattainable value
 stored_seconds = 80
