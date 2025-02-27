@@ -1,7 +1,7 @@
 #ifndef _APP_MAIN_H
 #define _APP_MAIN_H
 
-#define PUBLISH_PERIOD 5000
+#define PUBLISH_PERIOD 2000
 #define MAX_N_CHARS 300
 #define MAX_FIELD_CHARS 15
 #define MAX_DESP_CHARS 3
