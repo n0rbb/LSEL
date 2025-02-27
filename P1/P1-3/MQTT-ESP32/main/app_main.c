@@ -51,11 +51,12 @@ static const char *TAG = "mqtt_LSEL11";
 uint32_t MQTT_CONNECTED = 0;
 esp_mqtt_client_handle_t mqtt_client = NULL;
 char despacho[MAX_DESP_CHARS];
-float aire[NSAMPLES] = {500, 500, 500, 500, 500};
-float humedad[NSAMPLES] = {45, 45, 45, 45, 45};
-float luz[NSAMPLES] = {400, 400, 400, 400, 400};
+float aire[NSAMPLES] = {0, 0, 0, 0, 0};
+float humedad[NSAMPLES] = {0, 0, 0, 0, 0};
+float luz[NSAMPLES] = {0, 0, 0, 0, 0};
 float temperatura[NSAMPLES] = {22.5, 22.5, 22.5, 22.5, 22.5};
 float mean_aire = 0, mean_humedad = 0, mean_luz = 0, mean_temperatura = 0;
+
 
 float fmean(float *array, uint8_t size)
 {
@@ -91,7 +92,6 @@ void Publisher_Task(void *params) {
         vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
         if(MQTT_CONNECTED) {
             alarma_aire[0] = '\0', alarma_humedad[0] = '\0', alarma_luz[0] = '\0', alarma_temperatura[0] = '\0';
-            //Alarma Aire
             mean_aire = fmean(aire, NSAMPLES);
             if(mean_aire > MAX_AIRE) {
                 sprintf(alarma_aire, "AIRE ");
@@ -214,12 +214,12 @@ static void MessageFunction(void *event_data)
     if (strcmp(rcvd_field, "aire") == 0)
     {
         uint8_t i = 0;
-        for (i = NSAMPLES -1; i > 0; i--)
+        for (i = NSAMPLES - 1; i > 0; i--)
         {
             aire[i] = aire[i - 1];
         }
         aire[0] = atof(msg_data);
-        mean_aire = fmean(aire, NSAMPLES);
+       // mean_aire = fmean(aire, NSAMPLES);
     }
     if (strcmp(rcvd_field, "humedad") == 0)
     {
@@ -229,7 +229,7 @@ static void MessageFunction(void *event_data)
             humedad[i] = humedad[i - 1];
         }
         humedad[0] = atof(msg_data);
-        mean_humedad = fmean(humedad, NSAMPLES);
+      //  mean_humedad = fmean(humedad, NSAMPLES);
     }
     if (strcmp(rcvd_field, "luz") == 0)
     {
@@ -239,7 +239,7 @@ static void MessageFunction(void *event_data)
             luz[i] = luz[i - 1];
         }
         luz[0] = atof(msg_data);
-        mean_luz = fmean(luz, NSAMPLES);
+       // mean_luz = fmean(luz, NSAMPLES);
     }
     if (strcmp(rcvd_field, "temperatura") == 0)
     {
@@ -249,7 +249,7 @@ static void MessageFunction(void *event_data)
             temperatura[i] = temperatura[i - 1];
         }
         temperatura[0] = atof(msg_data);
-        mean_temperatura = fmean(temperatura, NSAMPLES);
+       // mean_temperatura = fmean(temperatura, NSAMPLES);
     }
 }
 

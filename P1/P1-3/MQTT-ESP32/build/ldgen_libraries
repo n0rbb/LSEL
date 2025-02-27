@@ -31,14 +31,12 @@ C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/nvs_flash/libnvs_flash.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_pcnt/libesp_driver_pcnt.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_spi/libesp_driver_spi.a
-C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_mcpwm/libesp_driver_mcpwm.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_i2s/libesp_driver_i2s.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/sdmmc/libsdmmc.a
-C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_sdmmc/libesp_driver_sdmmc.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_sdspi/libesp_driver_sdspi.a
-C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_sdio/libesp_driver_sdio.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_dac/libesp_driver_dac.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_rmt/libesp_driver_rmt.a
+C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_tsens/libesp_driver_tsens.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_sdm/libesp_driver_sdm.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_i2c/libesp_driver_i2c.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/esp_driver_ledc/libesp_driver_ledc.a
@@ -78,6 +76,8 @@ C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/mqt
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/nvs_sec_provider/libnvs_sec_provider.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/perfmon/libperfmon.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/spiffs/libspiffs.a
+C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/touch_element/libtouch_element.a
+C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/usb/libusb.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/protocol_examples_common/libprotocol_examples_common.a
 C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build/esp-idf/main/libmain.a

@@ -2,7 +2,14 @@
     "C_Cpp.intelliSenseEngine": "default",
     "idf.espIdfPathWin": "c:\\Users\\worbb\\esp\\v5.3.2\\esp-idf",
     "idf.toolsPathWin": "c:\\Users\\worbb\\esp\\v5.3.2\\esp-idf\\tools",
-    "idf.portWin": "COM5",
+    "idf.portWin": "COM6",
     "idf.flashType": "UART",
-    "idf.pythonInstallPath": "c:\\Users\\worbb\\esp\\v5.3.2\\esp-idf\\tools\\tools\\idf-python\\3.11.2\\python.exe"
+    "idf.pythonInstallPath": "c:\\Users\\worbb\\esp\\v5.3.2\\esp-idf\\tools\\tools\\idf-python\\3.11.2\\python.exe",
+    "idf.customExtraVars": {
+        "IDF_TARGET": "esp32s2"
+    },
+    "idf.openOcdConfigs": [
+        "interface/ftdi/esp32_devkitj_v1.cfg",
+        "target/esp32s2.cfg"
+    ]
 }
