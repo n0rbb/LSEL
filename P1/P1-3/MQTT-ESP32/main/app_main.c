@@ -30,20 +30,8 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-#define PUBLISH_PERIOD 5000
-#define MAX_N_CHARS 300
-#define MAX_FIELD_CHARS 15
-#define MAX_DESP_CHARS 3
-#define NSAMPLES 5
-#define DESP_CYCLES 3 // Number of cycles for despacho
-#define MAG_CYCLES 4  // Number of cycles for topic
-#define MIN_TEMP 20
-#define MAX_TEMP 25
-#define MIN_HUM 30
-#define MAX_HUM 60
-#define MIN_LUZ 300
-#define MAX_LUZ 500
-#define MAX_AIRE 1000
+#include "app_main.h"
+
 //#define CORREO "d.muniz@alumnos.upm.es"
 #define CORREO "mario.demiguel@alumnos.upm.es"
 
@@ -54,8 +42,10 @@ char despacho[MAX_DESP_CHARS];
 float aire[NSAMPLES] = {0, 0, 0, 0, 0};
 float humedad[NSAMPLES] = {0, 0, 0, 0, 0};
 float luz[NSAMPLES] = {0, 0, 0, 0, 0};
-float temperatura[NSAMPLES] = {22.5, 22.5, 22.5, 22.5, 22.5};
+float temperatura[NSAMPLES] = {0, 0, 0, 0, 0};
 float mean_aire = 0, mean_humedad = 0, mean_luz = 0, mean_temperatura = 0;
+
+static uint8_t recv_samples[4] = {0,0,0,0}; //Variable that checks how many samples of each measurement have been received.
 
 
 float fmean(float *array, uint8_t size)
@@ -92,14 +82,14 @@ void Publisher_Task(void *params) {
         vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
         if(MQTT_CONNECTED) {
             alarma_aire[0] = '\0', alarma_humedad[0] = '\0', alarma_luz[0] = '\0', alarma_temperatura[0] = '\0';
-            mean_aire = fmean(aire, NSAMPLES);
+            mean_aire = fmean(aire, recv_samples[0]);
             if(mean_aire > MAX_AIRE) {
                 sprintf(alarma_aire, "AIRE ");
                 alarma_flag++;
             }
 
             //Alarma Humedad
-            mean_humedad = fmean(humedad, NSAMPLES);
+            mean_humedad = fmean(humedad, recv_samples[1]);
             if(mean_humedad > MAX_HUM) {
                 sprintf(alarma_humedad, "HUMEDAD ALTA ");
                 alarma_flag++;
@@ -110,7 +100,7 @@ void Publisher_Task(void *params) {
             }
 
             //Alarma Luz
-            mean_luz = fmean(luz, NSAMPLES);
+            mean_luz = fmean(luz, recv_samples[2]);
             if (mean_luz > MAX_LUZ) {
                 sprintf(alarma_luz, "LUZ ALTA ");
                 alarma_flag++;
@@ -121,7 +111,7 @@ void Publisher_Task(void *params) {
             }
 
             //Alarma Temperatura
-            mean_temperatura = fmean(temperatura, NSAMPLES);
+            mean_temperatura = fmean(temperatura, recv_samples[3]);
             if(mean_temperatura > MAX_TEMP) {
                 sprintf(alarma_temperatura, "TEMPERATURA ALTA");
                 alarma_flag++;
@@ -219,7 +209,7 @@ static void MessageFunction(void *event_data)
             aire[i] = aire[i - 1];
         }
         aire[0] = atof(msg_data);
-       // mean_aire = fmean(aire, NSAMPLES);
+        if (recv_samples[0] < NSAMPLES) recv_samples[0]++;
     }
     if (strcmp(rcvd_field, "humedad") == 0)
     {
@@ -229,7 +219,7 @@ static void MessageFunction(void *event_data)
             humedad[i] = humedad[i - 1];
         }
         humedad[0] = atof(msg_data);
-      //  mean_humedad = fmean(humedad, NSAMPLES);
+        if (recv_samples[1] < NSAMPLES) recv_samples[1]++;
     }
     if (strcmp(rcvd_field, "luz") == 0)
     {
@@ -239,7 +229,7 @@ static void MessageFunction(void *event_data)
             luz[i] = luz[i - 1];
         }
         luz[0] = atof(msg_data);
-       // mean_luz = fmean(luz, NSAMPLES);
+        if (recv_samples[2] < NSAMPLES) recv_samples[2]++;
     }
     if (strcmp(rcvd_field, "temperatura") == 0)
     {
@@ -249,7 +239,7 @@ static void MessageFunction(void *event_data)
             temperatura[i] = temperatura[i - 1];
         }
         temperatura[0] = atof(msg_data);
-       // mean_temperatura = fmean(temperatura, NSAMPLES);
+        if (recv_samples[3] < NSAMPLES) recv_samples[3]++;
     }
 }
 
