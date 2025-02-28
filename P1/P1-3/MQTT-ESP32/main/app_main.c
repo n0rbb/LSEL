@@ -54,9 +54,9 @@ char despacho[MAX_DESP_CHARS];
 float aire[NSAMPLES] = {0, 0, 0, 0, 0};
 float humedad[NSAMPLES] = {0, 0, 0, 0, 0};
 float luz[NSAMPLES] = {0, 0, 0, 0, 0};
-float temperatura[NSAMPLES] = {22.5, 22.5, 22.5, 22.5, 22.5};
+float temperatura[NSAMPLES] = {0, 0, 0, 0, 0};
 float mean_aire = 0, mean_humedad = 0, mean_luz = 0, mean_temperatura = 0;
-
+uint8_t rcvd_samples[4] = {0, 0, 0, 0};
 
 float fmean(float *array, uint8_t size)
 {
@@ -89,7 +89,7 @@ void publish_alarma(char *mag)
     sprintf(payload, "%s", mag);
     printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
     msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-    ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
+   // ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
     ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
 }
 
@@ -102,7 +102,7 @@ void publish_promedios(char *mag, float mean)
     sprintf(payload, "%.2f", mean);
     printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
     msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-    ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
+    //ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
     ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
 }
 
@@ -114,13 +114,21 @@ void Publisher_Task(void *params) {
         if(MQTT_CONNECTED) {
             
 
-            mean_aire = fmean(aire, NSAMPLES);
+            mean_aire = fmean(aire, rcvd_samples[0]);
+            mean_humedad = fmean(humedad, rcvd_samples[1]);
+            mean_luz = fmean(luz, rcvd_samples[2]);
+            mean_temperatura = fmean(temperatura, rcvd_samples[3]);
+            //Publishing means
+            publish_promedios("aire", mean_aire);
+            publish_promedios("humedad", mean_humedad);
+            publish_promedios("luz", mean_luz);
+            publish_promedios("temperatura", mean_temperatura);
+
+
             if(mean_aire > MAX_AIRE) {
                 publish_alarma("Aire");
             }
-
-            //Alarma Humedad
-            mean_humedad = fmean(humedad, NSAMPLES);
+            
             if(mean_humedad > MAX_HUM) {
                 publish_alarma("Humedad Alta");
             }
@@ -128,8 +136,7 @@ void Publisher_Task(void *params) {
                 publish_alarma("Humedad Baja");
             }
 
-            //Alarma Luz
-            mean_luz = fmean(luz, NSAMPLES);
+            
             if (mean_luz > MAX_LUZ) {
                 publish_alarma("Luz Alta");
             }
@@ -137,8 +144,7 @@ void Publisher_Task(void *params) {
                 publish_alarma("Luz Baja");
             }
 
-            //Alarma Temperatura
-            mean_temperatura = fmean(temperatura, NSAMPLES);
+            
             if(mean_temperatura > MAX_TEMP) {
                 publish_alarma("Temperatura Alta");
             }
@@ -146,11 +152,6 @@ void Publisher_Task(void *params) {
                 publish_alarma("Temperatura Baja");
             }
             
-            //Publishing means
-            publish_promedios("aire", mean_aire);
-            publish_promedios("humedad", mean_humedad);
-            publish_promedios("luz", mean_luz);
-            publish_promedios("temperatura", mean_temperatura);
         }
         else{
             ESP_LOGI(TAG,"[Publisher_Task][MQTT NOT CONNECTED]");
@@ -204,7 +205,8 @@ static void MessageFunction(void *event_data)
             aire[i] = aire[i - 1];
         }
         aire[0] = atof(msg_data);
-       // mean_aire = fmean(aire, NSAMPLES);
+        if (rcvd_samples[0] < NSAMPLES) rcvd_samples[0]++;
+       
     }
     if (strcmp(rcvd_field, "humedad") == 0)
     {
@@ -214,7 +216,7 @@ static void MessageFunction(void *event_data)
             humedad[i] = humedad[i - 1];
         }
         humedad[0] = atof(msg_data);
-      //  mean_humedad = fmean(humedad, NSAMPLES);
+        if (rcvd_samples[1] < NSAMPLES) rcvd_samples[1]++;
     }
     if (strcmp(rcvd_field, "luz") == 0)
     {
@@ -224,7 +226,7 @@ static void MessageFunction(void *event_data)
             luz[i] = luz[i - 1];
         }
         luz[0] = atof(msg_data);
-       // mean_luz = fmean(luz, NSAMPLES);
+        if (rcvd_samples[2] < NSAMPLES) rcvd_samples[2]++;
     }
     if (strcmp(rcvd_field, "temperatura") == 0)
     {
@@ -234,7 +236,7 @@ static void MessageFunction(void *event_data)
             temperatura[i] = temperatura[i - 1];
         }
         temperatura[0] = atof(msg_data);
-       // mean_temperatura = fmean(temperatura, NSAMPLES);
+        if (rcvd_samples[3] < NSAMPLES) rcvd_samples[3]++;
     }
 }
 
