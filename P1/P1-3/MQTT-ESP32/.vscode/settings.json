@@ -11,5 +11,8 @@
     "idf.openOcdConfigs": [
         "interface/ftdi/esp32_devkitj_v1.cfg",
         "target/esp32s2.cfg"
-    ]
+    ],
+    "files.associations": {
+        "semphr.h": "c"
+    }
 }
