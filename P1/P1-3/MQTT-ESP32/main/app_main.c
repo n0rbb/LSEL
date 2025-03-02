@@ -1,12 +1,3 @@
-/* MQTT (over TCP) Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -30,20 +21,26 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-#define PUBLISH_PERIOD 5000
-#define MAX_N_CHARS 300
-#define MAX_FIELD_CHARS 15
-#define MAX_DESP_CHARS 3
-#define NSAMPLES 5
-#define DESP_CYCLES 3 // Number of cycles for despacho
-#define MAG_CYCLES 4  // Number of cycles for topic
+#define PUBLISH_PERIOD 5000 //Publish period, in ms 
+#define MAX_N_CHARS 300 //A macro to set a maximum size of strings to be used (we use an overly big value to avoid size issues)
+#define MAX_FIELD_CHARS 15 //Maximum size of strings contained event fields
+#define MAX_DESP_CHARS 3 //Maximum size of string containing the offie value
+#define NSAMPLES 5 //Number of each-sensor samples to keep stored at a time
+#define DESP_CYCLES 3 // Number of cycles for despacho: Despacho is the 3rd parameter: LSE/Instalaciones/Despachos/HERE
+#define MAG_CYCLES 4  // Number of cycles for our new topic: "Email_ocupante" is the 4th parameter: LSE/Instalaciones/Despachos/00/HERE 
+//Temperature threshold values
 #define MIN_TEMP 20
 #define MAX_TEMP 25
+//Humidity threshold values
 #define MIN_HUM 30
 #define MAX_HUM 60
+//Light threshold values
 #define MIN_LUZ 300
 #define MAX_LUZ 500
+//Air concentration threshold values
 #define MAX_AIRE 1000
+
+//Email of the student whose office is to be analysed
 #define CORREO "d.muniz@alumnos.upm.es"
 //#define CORREO "mario.demiguel@alumnos.upm.es"
 
@@ -58,6 +55,12 @@ float temperatura[NSAMPLES] = {0, 0, 0, 0, 0};
 float mean_aire = 0, mean_humedad = 0, mean_luz = 0, mean_temperatura = 0;
 uint8_t rcvd_samples[4] = {0, 0, 0, 0};
 
+/*
+/// @brief Function to compute the average of size-first values of an array
+/// @param array An array of raw values (float) used to compute the average
+/// @param size Generally the size of the array, but may indicate the number of samples to be considered for the average (size-first) 
+/// @return Float of single precision with the computed average
+*/
 float fmean(float *array, uint8_t size)
 {
     float sum = 0;
@@ -67,19 +70,27 @@ float fmean(float *array, uint8_t size)
     }
     return sum / size;
 }
-
+/*
+/// @brief Parsing function of MQTT topic: Will get the "cycle" token of a MQTT topic with "/" dividers
+/// @param msg_topic String with the full topic of the received message
+/// @param target_str String to which the parsed token is to be written
+/// @param cycle Max number of iterations within the function (position of the parameter we want)
+*/
 void get_parameter(char *msg_topic, char *target_str, int cycle)
 {
     char temp_msg_topic[MAX_N_CHARS];
-    strcpy(temp_msg_topic, msg_topic);
+    strcpy(temp_msg_topic, msg_topic); //Since strtok overwrites the strings, we first copy the it to a new one and work with that
     char *temp_str = strtok(temp_msg_topic, "/");
     for (int i = 0; i < cycle; i++)
     {
         temp_str = strtok(NULL, "/");
     }
-    strcpy(target_str, temp_str);
+    strcpy(target_str, temp_str); 
 }
-
+/*
+/// @brief Void function to publish the necessary alarms
+/// @param mag String with the alarm message payload: For instance, "Humedad alta"
+*/
 void publish_alarma(char *mag)
 {
     char topic[MAX_N_CHARS] = "";
@@ -89,10 +100,13 @@ void publish_alarma(char *mag)
     sprintf(payload, "%s", mag);
     printf("\r\n[Publisher_Task]\r\n[TOPIC][%s]\r\n[PAYLOAD][%s]\r\n", topic, payload);
     msg_id = esp_mqtt_client_publish(mqtt_client, topic, payload, 0, 0, 0);
-   // ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
     ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
 }
-
+/*
+/// @brief Void function that publishes the averages of the sensor measurements to their corresponding topics
+/// @param mag Which average are we going to publish, i.e. Aire, Humedad, Luz... (Used to determine the correct topic)
+/// @param mean Numeric value of the average, message payload
+*/
 void publish_promedios(char *mag, float mean)
 {
     char topic[MAX_N_CHARS] = "";
@@ -105,26 +119,32 @@ void publish_promedios(char *mag, float mean)
     //ESP_LOGI(TAG, "[TOPIC][%s]\r\n[PAYLOAD][%s]", topic, payload);
     ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
 }
-
+/*
+/// @brief FreeRTOS task that manages publishing of the sensor averages and the alarms 
+/// @param params 
+*/
 void Publisher_Task(void *params) {
     ESP_LOGI(TAG,"Publisher_Task");
 
     while (true) {
-        vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS);
+        vTaskDelay(PUBLISH_PERIOD / portTICK_PERIOD_MS); //Free RTOS delay function that ensures the publication at the set PUBLISH_PERIOD rate
         if(MQTT_CONNECTED) {
             
-
+            /*First we get the four means with the available samples. All positions in rcvd_samples will be 5, except in the case of the first iterations,
+            when not enough samples will have been received and so the average will be computed with less than 5 values. 
+            */
             mean_aire = fmean(aire, rcvd_samples[0]);
             mean_humedad = fmean(humedad, rcvd_samples[1]);
             mean_luz = fmean(luz, rcvd_samples[2]);
             mean_temperatura = fmean(temperatura, rcvd_samples[3]);
-            //Publishing means
+
+            //We now publish all the means
             publish_promedios("aire", mean_aire);
             publish_promedios("humedad", mean_humedad);
             publish_promedios("luz", mean_luz);
             publish_promedios("temperatura", mean_temperatura);
 
-
+            //Finally we compare our averages with the threshold values and publish the corresponding alarms
             if(mean_aire > MAX_AIRE) {
                 publish_alarma("Aire");
             }
@@ -158,33 +178,40 @@ void Publisher_Task(void *params) {
         }
     }
 }
-
+/*
+/// @brief MessageFunction: Function that handles the received MQTT messages. We may differentiate 2 tasks within the function. 
+/// a) Find the correct office: Parses all the topics to which the client is subscribed on start and finds the office with a given email (CORREO macro).
+/// b) Once subscribed to correct sensor data, handles the reception of raw values of each sensor (updates the data arrays and increments the rcvd_data values on the first iterations).
+/// @param event_data Pointer to a reception event, with a topic and a payload, among others
+*/
 static void MessageFunction(void *event_data)
 {
     esp_mqtt_event_handle_t event = event_data;
     char msg_data[MAX_N_CHARS];
     char msg_topic[MAX_N_CHARS];
     char rcvd_field[MAX_FIELD_CHARS];
-
+    
+    //We save the values we need to variables msg_topic and msg_data (payload)
     sprintf(msg_topic, "%.*s", event->topic_len, event->topic);
     sprintf(msg_data, "%.*s", event->data_len, event->data);
-    get_parameter(msg_topic, rcvd_field, MAG_CYCLES);
-    // printf(msg_data);
-    // printf("%d", strcmp(msg_data, CORREO_1));
 
-    if (strcmp(rcvd_field, "email_ocupante") == 0)
+    //We parse the fourth token from the topic and save it to rcvd_field 
+    get_parameter(msg_topic, rcvd_field, MAG_CYCLES);
+
+    //If we are getting a fourth token "email_ocupante" we get the payload and compare it to our set CORREO.
+    if (strcmp(rcvd_field, "email_ocupante") == 0) 
     {
-        if (strcmp(msg_data, CORREO) == 0)
+        if (strcmp(msg_data, CORREO) == 0) //We have found our office
         {
-            get_parameter(msg_topic, despacho, DESP_CYCLES);
+            get_parameter(msg_topic, despacho, DESP_CYCLES); //We parse the token again to get the office number
             printf("--------------------------------------------\r\n");
             printf("TOPIC=%s\r\n", msg_topic);
             printf("DATA=%s\r\n", msg_data);
             printf("Despacho: %s\r\n", despacho);
             printf("--------------------------------------------\r\n");
-            esp_mqtt_client_unsubscribe(mqtt_client, "LSE/instalaciones/despachos/+/email_ocupante");
+            esp_mqtt_client_unsubscribe(mqtt_client, "LSE/instalaciones/despachos/+/email_ocupante"); //We can now unsubscribe to all-offices to resubscribe to our office data
 
-            // Subscribing to the topics
+            // We now subscribe to all topics but the email within our office and start our publishing task (That's why we don't use #)
             char subs_topic[MAX_N_CHARS];
             sprintf(subs_topic, "LSE/instalaciones/despachos/%s/aire", despacho);
             esp_mqtt_client_subscribe(mqtt_client, subs_topic, 1);
@@ -197,6 +224,8 @@ static void MessageFunction(void *event_data)
             xTaskCreate(Publisher_Task, "Publisher_Task", 1024 * 5, NULL, 5, NULL);
         }
     }
+
+    //After we subscribed to our office topics, we can start getting our sensor samples and storing it to the arrays.
     if (strcmp(rcvd_field, "aire") == 0)
     {
         uint8_t i = 0;
@@ -269,18 +298,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         MQTT_CONNECTED = 1;
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-        /*
-        msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-        */
         msg_id = esp_mqtt_client_subscribe(client, "LSE/instalaciones/despachos/+/email_ocupante", 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_DISCONNECTED:
         MQTT_CONNECTED = 0;
@@ -289,7 +308,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
@@ -301,8 +319,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         MessageFunction(event_data);
-        //  printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        //  printf("DATA=%.*s\r\n", event->data_len, event->data);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");

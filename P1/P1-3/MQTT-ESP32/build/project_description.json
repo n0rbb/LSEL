@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "mqtt_tcp",
-    "project_version":    "fcf70e8-dirty",
+    "project_version":    "2490267-dirty",
     "project_path":       "C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32",
     "idf_path":           "C:/Users/worbb/esp/v5.3.2/esp-idf",
     "build_dir":          "C:/Users/worbb/Desktop/Electronics/LSEL/Git/P1/P1-3/MQTT-ESP32/build",
