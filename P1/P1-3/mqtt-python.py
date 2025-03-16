@@ -152,7 +152,7 @@ def publisherFunction(period):
 
 while True:
 	if (found_office): publisherFunction(period) 
-	time.sleep(0.01)
+	else: time.sleep(0.01)
      
 
 
