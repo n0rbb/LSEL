@@ -15,12 +15,22 @@ temperatura = [0, 0, 0, 0, 0]
 
 period = 5 #s
 
+#Creo un diccionario que mapee los tokens del topic a las listas de valores recibidos, me servirá para actualizar la lista de received_samples.
+sensores = {
+    "aire" : aire,
+    "humedad" : humedad,
+    "luz" : luz,
+    "temperatura" : temperatura
+}
+
+
 def messageEvent (client, userdata, message):
     global topic, msg
     topic = str(message.topic)
     msg = str(message.payload.decode("utf-8"))
     print(msg)
     #return [topic, msg]
+    messageFunction()
 
 if len(sys.argv) < 2:
 	correo = "mario.demiguel@alumnos.upm.es" #No email entered by user
@@ -44,7 +54,7 @@ ourClient.loop_start()
 def messageFunction():
     global topic, msg, despacho, found_office, aire, temperatura, humedad, luz
     t_split = topic.split("/")
-    print("token" + t_split[4])
+    #print("token" + t_split[4])
     if (t_split[4] == "email_ocupante") and (found_office == False):
         #print(msg)
         #print(correo)
@@ -57,29 +67,14 @@ def messageFunction():
             ourClient.subscribe(f"LSE/instalaciones/despachos/{despacho}/humedad")
             ourClient.subscribe(f"LSE/instalaciones/despachos/{despacho}/luz")
             ourClient.subscribe(f"LSE/instalaciones/despachos/{despacho}/temperatura")
-    elif (t_split[4] == "aire"):
-        for i in range(len(aire) - 1):
-            aire[i] = aire[i + 1]
-        aire[4] = float(msg)
-        if rcvd_samples[0] < 5: rcvd_samples[0] += 1
-
-    elif (t_split[4] == "humedad"):
-        for i in range(len(humedad) - 1):
-            humedad[i] = humedad[i + 1]
-        humedad[4] = float(msg)
-        if rcvd_samples[1] < 5: rcvd_samples[1] += 1
-
-    elif (t_split[4] == "luz"):
-        for i in range(len(luz) - 1):
-            luz[i] = luz[i + 1]
-        luz[4] = float(msg)
-        if rcvd_samples[2] < 5: rcvd_samples[2] += 1
-
-    elif (t_split[4] == "temperatura"):
-        for i in range(len(temperatura) - 1):
-            temperatura[i] = temperatura[i + 1]
-        temperatura[4] = float(msg)
-        if rcvd_samples[3] < 5: rcvd_samples[3] += 1
+            
+    elif t_split[4] in sensores:
+        muestra = sensores[t_split[4]] # Meto en muestra (lista) la clave de sensores correspondiente al valor t_split[4] (string)
+        for i in range(len(muestra) - 1):
+            muestra[i] = muestra[i + 1] #Desplazo una posición a la izquierda todas las muestras, liberando la posición 4 o -1 de la lista
+        muestra[-1] = float(msg) #Actualizo la última posición de la lista con el payload del mensaje
+        k = list(sensores.keys()).index(t_split[4])
+        if rcvd_samples[k] < 5: rcvd_samples[k] += 1 #Actualizo el valor correspondiente de muestras recibidas
 
 def fmean(array, size):
     if (size != 0):
@@ -113,7 +108,5 @@ def publisherFunction(period):
     time.sleep(period)
 
 while True:
-	messageFunction()
 	if (found_office): publisherFunction(period) 
 	time.sleep(0.01)
-	
