@@ -42,6 +42,7 @@ if len(sys.argv) < 3:
 else:
 	clientid = str(sys.argv[2])
 	
+
 topic_all = "LSE/instalaciones/despachos/+/email_ocupante"
 topic = topic_all
 msg = ""
@@ -50,6 +51,7 @@ ourClient.connect("192.168.1.42", 1885)
 ourClient.on_message = messageEvent
 ourClient.subscribe(topic_all)
 ourClient.loop_start()
+
 
 def messageFunction():
     global topic, msg, despacho, found_office, aire, temperatura, humedad, luz
@@ -67,7 +69,7 @@ def messageFunction():
             ourClient.subscribe(f"LSE/instalaciones/despachos/{despacho}/humedad")
             ourClient.subscribe(f"LSE/instalaciones/despachos/{despacho}/luz")
             ourClient.subscribe(f"LSE/instalaciones/despachos/{despacho}/temperatura")
-            
+
     elif t_split[4] in sensores:
         muestra = sensores[t_split[4]] # Meto en muestra (lista) la clave de sensores correspondiente al valor t_split[4] (string)
         for i in range(len(muestra) - 1):
@@ -75,6 +77,7 @@ def messageFunction():
         muestra[-1] = float(msg) #Actualizo la última posición de la lista con el payload del mensaje
         k = list(sensores.keys()).index(t_split[4])
         if rcvd_samples[k] < 5: rcvd_samples[k] += 1 #Actualizo el valor correspondiente de muestras recibidas
+
 
 def fmean(array, size):
     if (size != 0):
@@ -86,26 +89,66 @@ def fmean(array, size):
     else:
         return 0
     
-          
+def pillar_alertas(a, h, l, t):
+    #Aire
+    lista_alertas = []
+    MAX_AIRE = 1000 
+    if a >= MAX_AIRE:
+        lista_alertas.append("Huele muy mal, hay otakus aquí")
+
+    #Humedad
+    MIN_HUM = 30
+    MAX_HUM = 60
+    if h <= MIN_HUM:
+        lista_alertas.append("Parece esto el Sáhara")
+    elif h >= MAX_HUM:
+        lista_alertas.append("Parece esto el Congo")
+    
+    #Luz 
+    MIN_LUZ = 300
+    MAX_LUZ = 600
+    if l <= MIN_LUZ:
+        lista_alertas.append("En este despacho vive Drácula")
+    elif l >= MAX_LUZ:
+        lista_alertas.append("En este despacho hicieron fusión atómica")
+
+    #Temperatura
+    MIN_TEMP = 20
+    MAX_TEMP = 25
+    if t <= MIN_TEMP:
+        lista_alertas.append("Hace más frío que en su corazón")
+    elif t >= MAX_TEMP:
+        lista_alertas.append("Encuérense los presentes")
+
+    return lista_alertas
 
 def publisherFunction(period):
     global despacho, aire, temperatura, humedad, luz
-    
-    print(aire)
-    print(humedad)
-    print(luz)
-    print(temperatura)
+    #print(aire)
+    #print(humedad)
+    #print(luz)
+    #print(temperatura)
 
     a_mean = fmean(aire, rcvd_samples[0])
     h_mean = fmean(humedad, rcvd_samples[1])
     l_mean = fmean(luz, rcvd_samples[2])
     t_mean = fmean(temperatura, rcvd_samples[3])
 
-    ourClient.publish(f"LSE/trabajadores/{correo}/promedios/aire", f"Aire: {str(a_mean)}")
-    ourClient.publish(f"LSE/trabajadores/{correo}/promedios/humedad", f"Humedad: {str(h_mean)}")
-    ourClient.publish(f"LSE/trabajadores/{correo}/promedios/luz", f"Luz: {str(l_mean)}")
-    ourClient.publish(f"LSE/trabajadores/{correo}/promedios/temperatura", f"Temperatura: {str(t_mean)}")
+    if not 0 in [a_mean, h_mean, l_mean, t_mean]:
+        
+        ourClient.publish(f"LSE/trabajadores/{correo}/promedios/aire", f"Aire: {str(a_mean)}")
+        ourClient.publish(f"LSE/trabajadores/{correo}/promedios/humedad", f"Humedad: {str(h_mean)}")
+        ourClient.publish(f"LSE/trabajadores/{correo}/promedios/luz", f"Luz: {str(l_mean)}")
+        ourClient.publish(f"LSE/trabajadores/{correo}/promedios/temperatura", f"Temperatura: {str(t_mean)}")
+
+        alertas = pillar_alertas(a_mean, h_mean, l_mean, t_mean)
+        for alerta in alertas:
+            #print(alerta)
+            ourClient.publish(f"LSE/trabajadores/{correo}/alerta", alerta)
+        
+
     time.sleep(period)
+
 
 while True:
 	if (found_office): publisherFunction(period) 
