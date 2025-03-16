@@ -23,7 +23,7 @@ def messageEvent (client, userdata, message):
     #return [topic, msg]
 
 if len(sys.argv) < 2:
-	correo = "sara.molina@upm.es" #No email entered by user
+	correo = "mario.demiguel@alumnos.upm.es" #No email entered by user
 else:
 	correo = str(sys.argv[1])
 	
